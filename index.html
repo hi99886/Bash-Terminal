@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Ubuntu Terminal in Browser</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    
+    <script src="https://cxrtinvitation.leaningtech.com/cxrt.js"></script>
+
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        #terminal-container {
+            flex-grow: 1;
+            background-color: #000;
+            border: 2px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        h2 { margin: 0 0 10px 0; color: #e95420; } /* Ubuntu Orange */
+    </style>
+</head>
+<body>
+
+    <h2>In-Browser Ubuntu Bash Shell</h2>
+    <div id="terminal-container"></div>
+
+    <script>
+        async function bootLinux() {
+            const container = document.getElementById('terminal-container');
+            
+            // 1. Initialize the Xterm.js terminal UI
+            const term = new Terminal({
+                cursorBlink: true,
+                theme: { background: '#000000' }
+            });
+            term.open(container);
+            term.write("Downloading WebAssembly OS layers & booting Ubuntu...\r\n");
+
+            // 2. Initialize CheerpX x86 Virtualization Engine
+            // This pulls a real Ubuntu disk image via HTTP blocks
+            const cx = await CheerpX.Linux.create({
+                mounts: [
+                    { 
+                        type: "ext2", 
+                        url: "https://webvm.io/debian_large_20230522_5043937084.img", 
+                        mountPoint: "/" 
+                    }
+                ]
+            });
+
+            // 3. Bind the Linux OS input/output to the Xterm.js UI
+            cx.registerOSCallback(function(type, data) {
+                if (type === "stdout" || type === "stderr") {
+                    term.write(data);
+                }
+            });
+
+            term.onData((data) => {
+                cx.sendInput(data);
+            });
+
+            // 4. Launch the actual Bash shell inside the VM
+            await cx.run("/bin/bash", ["--login"]);
+        }
+
+        // Start the boot sequence when the page loads
+        window.onload = bootLinux;
+    </script>
+</body>
+</html>
