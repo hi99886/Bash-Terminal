@@ -3,80 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Full Ubuntu Terminal in Browser</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
-    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
-    
-    <script src="https://cxrtinvitation.leaningtech.com/cxrt.js"></script>
-
+    <title>Real In-Browser Linux Terminal</title>
     <style>
         body {
-            background-color: #111;
+            background-color: #1a1a1a;
             color: #fff;
             font-family: monospace;
             margin: 0;
             padding: 20px;
             display: flex;
             flex-direction: column;
+            align-items: center;
             height: 100vh;
             box-sizing: border-box;
         }
-        #terminal-container {
-            flex-grow: 1;
-            background-color: #000;
-            border: 2px solid #333;
-            border-radius: 4px;
-            padding: 10px;
+        h2 {
+            margin: 0 0 5px 0;
+            color: #00ff00;
         }
-        h2 { margin: 0 0 10px 0; color: #e95420; } /* Ubuntu Orange */
+        p {
+            margin: 0 0 15px 0;
+            color: #aaa;
+            font-size: 14px;
+        }
+        /* This box simulates the monitor screen */
+        #screen_container {
+            width: 100%;
+            max-width: 800px;
+            height: 450px;
+            background-color: #000;
+            border: 3px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+        /* Formats the raw text stream inside the VM emulator */
+        #screen_container > div {
+            white-space: pre;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 15px;
+            line-height: 16px;
+            color: #ffffff;
+        }
+        canvas {
+            display: none; /* Hide graphical output, we only want text */
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/v86@0.33.0/build/libv86.js"></script>
 </head>
 <body>
 
-    <h2>In-Browser Ubuntu Bash Shell</h2>
-    <div id="terminal-container"></div>
+    <h2>WebAssembly x86 Linux Emulator</h2>
+    <p>Booting an actual Linux kernel client-side. Wait about 10 seconds for the console prompt.</p>
+
+    <div id="screen_container">
+        <div></div>
+        <canvas></canvas>
+    </div>
 
     <script>
-        async function bootLinux() {
-            const container = document.getElementById('terminal-container');
-            
-            // 1. Initialize the Xterm.js terminal UI
-            const term = new Terminal({
-                cursorBlink: true,
-                theme: { background: '#000000' }
+        window.onload = function() {
+            // Boot the x86 Emulator structure entirely inside the browser tab
+            var emulator = new V86Starter({
+                wasm_path: "https://cdn.jsdelivr.net/npm/v86@0.33.0/build/v86.wasm",
+                memory_size: 32 * 1024 * 1024, // Allocates 32MB of browser RAM
+                vga_memory_size: 2 * 1024 * 1024,
+                screen_container: document.getElementById("screen_container"),
+                
+                // Fetch public open-source x86 Bios files 
+                bios: { url: "https://cdn.jsdelivr.net/npm/v86@0.33.0/bios/seabios.bin" },
+                vga_bios: { url: "https://cdn.jsdelivr.net/npm/v86@0.33.0/bios/vgabios.bin" },
+                
+                // Fetch a real, hyper-minimal Linux system image
+                bzimage: { url: "https://cdn.jsdelivr.net/npm/v86-images@1.0.1/images/alpine/bzImage" },
+                
+                // Boot arguments to drop straight into the shell console
+                cmdline: "rw root=/dev/ram0 init=/bin/sh console=ttyS0",
+                autostart: true,
             });
-            term.open(container);
-            term.write("Downloading WebAssembly OS layers & booting Ubuntu...\r\n");
-
-            // 2. Initialize CheerpX x86 Virtualization Engine
-            // This pulls a real Ubuntu disk image via HTTP blocks
-            const cx = await CheerpX.Linux.create({
-                mounts: [
-                    { 
-                        type: "ext2", 
-                        url: "https://webvm.io/debian_large_20230522_5043937084.img", 
-                        mountPoint: "/" 
-                    }
-                ]
-            });
-
-            // 3. Bind the Linux OS input/output to the Xterm.js UI
-            cx.registerOSCallback(function(type, data) {
-                if (type === "stdout" || type === "stderr") {
-                    term.write(data);
-                }
-            });
-
-            term.onData((data) => {
-                cx.sendInput(data);
-            });
-
-            // 4. Launch the actual Bash shell inside the VM
-            await cx.run("/bin/bash", ["--login"]);
-        }
-
-        // Start the boot sequence when the page loads
-        window.onload = bootLinux;
+        };
     </script>
 </body>
 </html>
