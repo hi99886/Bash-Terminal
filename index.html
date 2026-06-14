@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real In-Browser Linux Terminal</title>
+    <title>My Personal Linux Terminal</title>
     <style>
         body {
             background-color: #1a1a1a;
@@ -17,16 +17,8 @@
             height: 100vh;
             box-sizing: border-box;
         }
-        h2 {
-            margin: 0 0 5px 0;
-            color: #00ff00;
-        }
-        p {
-            margin: 0 0 15px 0;
-            color: #aaa;
-            font-size: 14px;
-        }
-        /* This box simulates the monitor screen */
+        h2 { margin: 0 0 5px 0; color: #00ff00; }
+        p { margin: 0 0 15px 0; color: #aaa; font-size: 14px; }
         #screen_container {
             width: 100%;
             max-width: 800px;
@@ -38,7 +30,6 @@
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.7);
         }
-        /* Formats the raw text stream inside the VM emulator */
         #screen_container > div {
             white-space: pre;
             font-family: 'Courier New', Courier, monospace;
@@ -46,16 +37,14 @@
             line-height: 16px;
             color: #ffffff;
         }
-        canvas {
-            display: none; /* Hide graphical output, we only want text */
-        }
+        canvas { display: none; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/v86@0.33.0/build/libv86.js"></script>
 </head>
 <body>
 
-    <h2>WebAssembly x86 Linux Emulator</h2>
-    <p>Booting an actual Linux kernel client-side. Wait about 10 seconds for the console prompt.</p>
+    <h2>My Hosted Linux Shell</h2>
+    <p>Booting a pure WebAssembly kernel directly from your repository files...</p>
 
     <div id="screen_container">
         <div></div>
@@ -64,22 +53,19 @@
 
     <script>
         window.onload = function() {
-            // Boot the x86 Emulator structure entirely inside the browser tab
             var emulator = new V86Starter({
                 wasm_path: "https://cdn.jsdelivr.net/npm/v86@0.33.0/build/v86.wasm",
-                memory_size: 32 * 1024 * 1024, // Allocates 32MB of browser RAM
+                memory_size: 16 * 1024 * 1024, 
                 vga_memory_size: 2 * 1024 * 1024,
                 screen_container: document.getElementById("screen_container"),
                 
-                // Fetch public open-source x86 Bios files 
                 bios: { url: "https://cdn.jsdelivr.net/npm/v86@0.33.0/bios/seabios.bin" },
                 vga_bios: { url: "https://cdn.jsdelivr.net/npm/v86@0.33.0/bios/vgabios.bin" },
                 
-                // Fetch a real, hyper-minimal Linux system image
-                bzimage: { url: "https://cdn.jsdelivr.net/npm/v86-images@1.0.1/images/alpine/bzImage" },
+                // Points to the OS image inside your own project directory
+                bzimage: { url: "bzimage" },
                 
-                // Boot arguments to drop straight into the shell console
-                cmdline: "rw root=/dev/ram0 init=/bin/sh console=ttyS0",
+                cmdline: "rw init=/bin/sh root=rootfs rootfstype=tmpfs console=ttyS0",
                 autostart: true,
             });
         };
