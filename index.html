@@ -37,7 +37,6 @@
             line-height: 16px;
             color: #ffffff;
         }
-        canvas { display: none; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/v86@0.33.0/build/libv86.js"></script>
 </head>
@@ -47,23 +46,21 @@
     <p>Booting a pure WebAssembly kernel directly from your repository files...</p>
 
     <div id="screen_container">
-        <div></div>
-        <canvas></canvas>
+        <div>Initializing emulator... If this doesn't change, check your browser console (Ctrl+Shift+I).</div>
     </div>
 
     <script>
         window.onload = function() {
+            // Check if file names match what you uploaded
             var emulator = new V86Starter({
                 wasm_path: "https://cdn.jsdelivr.net/npm/v86@0.33.0/build/v86.wasm",
-                memory_size: 16 * 1024 * 1024, 
-                vga_memory_size: 2 * 1024 * 1024,
+                memory_size: 16 * 1024 * 1024,
                 screen_container: document.getElementById("screen_container"),
                 
-                bios: { url: "https://cdn.jsdelivr.net/npm/v86@0.33.0/bios/seabios.bin" },
-                vga_bios: { url: "https://cdn.jsdelivr.net/npm/v86@0.33.0/bios/vgabios.bin" },
-                
-                // Points to the OS image inside your own project directory
-                bzimage: { url: "bzimage" },
+                // Using a text-only initial image structure that doesn't require separate BIOS files
+                linux_elf: {
+                    url: "bzimage" // <-- MAKE SURE THIS MATCHES YOUR FILENAME ON GITHUB EXACTLY
+                },
                 
                 cmdline: "rw init=/bin/sh root=rootfs rootfstype=tmpfs console=ttyS0",
                 autostart: true,
